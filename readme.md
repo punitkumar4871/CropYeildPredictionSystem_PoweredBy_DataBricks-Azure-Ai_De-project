@@ -1,1 +1,1 @@
-this is my MlOPs deployment project.
+this is my MLOPs deployment project.
