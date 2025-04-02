@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Farming Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+        }
+        h2 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        h3 {
+            margin-top: 25px;
+            color: #28a745;
+            border-bottom: 3px solid #ddd;
+            padding-bottom: 8px;
+        }
+        p {
+            line-height: 1.8;
+            color: #333;
+        }
+        ul {
+            margin-left: 20px;
+            padding-left: 20px;
+        }
+        .info-box {
+            background: #f1f3f5;
+            padding: 15px;
+            border-left: 5px solid #007bff;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .highlight {
+            background: #e9ecef;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 25px;
+        }
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        .back-btn:hover {
+            background-color: #0056b3;
+        }
+        .section {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🌾 Comprehensive Farming Report</h2>
+
+    <div class="highlight">
+        <p><strong>📍 State:</strong> {{ state }}</p>
+        <p><strong>🏢 District:</strong> {{ district }}</p>
+        <p><strong>🌤️ Season:</strong> {{ season }}</p>
+        <p><strong>🌿 Crop:</strong> {{ crop }}</p>
+        <p><strong>📅 Crop Year:</strong> {{ crop_year }}</p>
+        <p><strong>🌍 Land Area:</strong> {{ area }} hectares</p>
+        <p><strong>📊 Predicted Yield per hectare:</strong> {{ predicted_yield }} tons</p>
+        <p><strong>📦 Total Estimated Yield:</strong> {{ total_yield }} tons</p>
+    </div>
+
+    <h3>📌 Soil & Fertilizer Recommendations</h3>
+    <div class="info-box">
+        <p>{{ soil_recommendations }}</p>
+    </div>
+
+    <h3>🐞 Pest & Disease Management</h3>
+    <div class="info-box">
+        <p>{{ pest_management }}</p>
+    </div>
+
+    <h3>💧 Water & Irrigation Strategies</h3>
+    <div class="info-box">
+        <p>{{ irrigation_strategies }}</p>
+    </div>
+
+    <h3>🌱 Best Farming Practices</h3>
+    <div class="info-box">
+        <p>{{ best_farming_practices }}</p>
+    </div>
+
+    <h3>🌍 Climate Impact on Farming</h3>
+    <div class="info-box">
+        <p>{{ climate_impact }}</p>
+    </div>
+
+    <h3>📈 Market Trends & Pricing</h3>
+    <div class="info-box">
+        <p>{{ market_trends }}</p>
+    </div>
+
+    <h3>🏛️ Government Schemes & Subsidies</h3>
+    <div class="info-box">
+        <p>{{ government_schemes }}</p>
+    </div>
+
+    <h3>🔍 Additional Tips for Farmers</h3>
+    <div class="info-box section">
+        <ul>
+            <li>🛠 **Use Modern Technology:** Smart irrigation techniques improve efficiency.</li>
+            <li>📈 **Monitor Weather Conditions:** Plan agricultural activities based on forecasts.</li>
+            <li>🌾 **Crop Rotation:** Maintains soil fertility and prevents pest outbreaks.</li>
+            <li>🚜 **Efficient Resource Management:** Optimize use of fertilizers, pesticides, and water.</li>
+            <li>📋 **Record Keeping:** Maintain logs of crop yield, expenses, and field conditions.</li>
+        </ul>
+    </div>
+
+    <div class="btn-container">
+        <a href="/" class="back-btn">🔙 Back to Home</a>
+    </div>
+</div>
+
+</body>
+</html>

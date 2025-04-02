@@ -8,4 +8,6 @@ joblib
 Flask
 scipy
 dill
+streamlit
+google-generativeai
 -e .

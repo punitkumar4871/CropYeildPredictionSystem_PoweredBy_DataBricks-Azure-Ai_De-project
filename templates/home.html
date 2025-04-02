@@ -1,114 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crop Yield Prediction</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 20px;
+            background-color: #f4f4f4;
         }
-        .login {
-            background-color: #f9f9f9;
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
+        h2 {
+            text-align: center;
+        }
+        label {
             font-weight: bold;
         }
-        .form-control {
+        input, select {
             width: 100%;
             padding: 8px;
-            margin-bottom: 15px;
+            margin: 5px 0 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            box-sizing: border-box;
         }
-        .btn-primary {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
+        button {
+            width: 48%;
+            padding: 10px;
+            margin-top: 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
         }
-        .btn-primary:hover {
-            background-color: #45a049;
+        .predict-btn {
+            background-color: #28a745;
+            color: white;
         }
-        h1, h2 {
-            color: #333;
+        .report-btn {
+            background-color: #007bff;
+            color: white;
         }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-        .success {
-            color: green;
-            font-weight: bold;
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div class="login">
-        <h1>Crop Yield Prediction System</h1>
-        
-        <form action="/predictdata" method="post">
-            <h2><legend>Crop Yield Prediction</legend></h2>
 
-            <label class="form-label">State Name</label>
-            <select class="form-control" name="State_Name" required>
-                <option class="placeholder" selected disabled value="">Select State</option>
-                <option value="ANI">Andaman and Nicobar Islands</option>
-                <option value="AP">Andhra Pradesh</option>
-            </select>
+<div class="container">
+    <h2>🌾 Crop Yield Prediction</h2>
 
-            <label class="form-label">District Name</label>
-            <select class="form-control" name="District_Name" required>
-                <option class="placeholder" selected disabled value="">Select District</option>
-                <option value="NICOBARS">Nicobars</option>
-                <option value="ANANTAPUR">Anantapur</option>
-            </select>
+    <form action="/predictdata" method="post">
+        <label for="State_Name">State:</label>
+        <input type="text" id="State_Name" name="State_Name" required>
 
-            <label class="form-label">Season</label>
-            <select class="form-control" name="Season" required>
-                <option class="placeholder" selected disabled value="">Select Season</option>
-                <option value="Kharif">Kharif</option>
-                <option value="Rabi">Rabi</option>
-            </select>
+        <label for="District_Name">District:</label>
+        <input type="text" id="District_Name" name="District_Name" required>
 
-            <label class="form-label">Crop</label>
-            <select class="form-control" name="Crop" required>
-                <option class="placeholder" selected disabled value="">Select Crop</option>
-                <option value="Rice">Rice</option>
-                <option value="Maize">Maize</option>
-            </select>
+        <label for="Season">Season:</label>
+        <select id="Season" name="Season">
+            <option value="Kharif">Kharif</option>
+            <option value="Rabi">Rabi</option>
+            <option value="Summer">Summer</option>
+        </select>
 
-            <label class="form-label">Crop Year</label>
-            <input class="form-control" type="number" name="Crop_Year" min="1990" max="2025" required>
+        <label for="Crop">Crop:</label>
+        <input type="text" id="Crop" name="Crop" required>
 
-            <label class="form-label">Area (hectares)</label>
-            <input class="form-control" type="number" name="Area" min="0" step="0.01" required>
+        <label for="Crop_Year">Crop Year:</label>
+        <input type="number" id="Crop_Year" name="Crop_Year" required>
 
-            <label class="form-label">Annual Rainfall (mm)</label>
-            <input class="form-control" type="number" name="annual_rainfall" min="0" required>
+        <label for="Area">Land Area (hectares):</label>
+        <input type="number" id="Area" name="Area" step="0.1" required>
 
-            <input class="btn btn-primary" type="submit" value="Predict Yield">
-        </form>
-        
-        {% if results is not none %}
-            {% if results.startswith("Error") %}
-                <h2 class="error">{{ results }}</h2>
-            {% else %}
-                <h2 class="success">
-                    ✅ The predicted yield is: <strong>{{ results }}</strong>
-                </h2>
-            {% endif %}
-        {% endif %}
+        <label for="annual_rainfall">Annual Rainfall (mm):</label>
+        <input type="number" id="annual_rainfall" name="annual_rainfall" step="0.1" required>
+
+        <div style="display: flex; justify-content: space-between;">
+            <button type="submit" class="predict-btn">Predict</button>
+            <button type="submit" formaction="/generate_report" class="report-btn">Generate Report</button>
+        </div>
+    </form>
+
+    {% if results %}
+    <div class="result-container">
+        <h3>Predicted Yield: {{ results }} tons per hectare</h3>
     </div>
+    {% endif %}
+
+    {% if report %}
+    <div class="result-container">
+        <h3>📝 Generated Farming Report</h3>
+        <p>{{ report }}</p>
+    </div>
+    {% endif %}
+</div>
+
 </body>
 </html>
