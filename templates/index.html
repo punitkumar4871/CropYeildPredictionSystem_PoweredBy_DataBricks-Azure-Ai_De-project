@@ -3,34 +3,108 @@
 <head>
     <title>Crop Yield Prediction</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
             text-align: center;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: url("{{ url_for('static', filename='cropimg.jpg') }}") no-repeat center center;
+            background-size: cover;
+            overflow: hidden; /* Prevents scrollbars due to effect */
         }
         h1 {
-            color: #4CAF50;
-            margin-top: 50px;
+            color: black;
+            font-size: 36px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            position: relative;
+            top: -230px; /* Moves text higher */
+            transition: transform 0.3s ease-in-out;
+        }
+        h1:hover {
+            transform: scale(1.05);
+        }
+        p {
+            color: black;
+            font-size: 18px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            position: relative;
+            top: -210px; /* Moves text higher */
+            transition: transform 0.3s ease-in-out;
+        }
+        p:hover {
+            transform: scale(1.05);
         }
         a {
             display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 12px 24px;
+            background-color: #287c2a;
+            color: #e4e6e2;
             text-decoration: none;
             border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            position: relative;
+            top: 100px; /* Moves button lower */
+            transition: all 0.3s ease-in-out;
         }
         a:hover {
             background-color: #45a049;
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
     <h1>Welcome to Crop Yield Prediction System</h1>
     <p>This application helps predict crop yields based on various agricultural parameters.</p>
+
+    <!-- Button Below the Text -->
     <a href="/predictdata">Go to Prediction Page</a>
+
+    <script>
+        document.addEventListener("mousemove", function(e) {
+            let trail = document.createElement("div");
+            trail.className = "trail-effect";
+            document.body.appendChild(trail);
+
+            let size = Math.random() * 4 + 4; // Smaller effect (4px to 8px)
+            trail.style.width = size + "px";
+            trail.style.height = size + "px";
+            trail.style.left = e.clientX + "px";
+            trail.style.top = e.clientY + "px";
+
+            setTimeout(() => {
+                trail.style.opacity = "0";
+                setTimeout(() => trail.remove(), 300); // Faster fade-out
+            }, 50);
+        });
+
+        // Add CSS for effect using JavaScript
+        let style = document.createElement("style");
+        style.innerHTML = `
+            .trail-effect {
+                position: absolute;
+                background-color: rgba(255, 255, 255, 0.6); /* Less bright */
+                border-radius: 50%;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 0.3s ease-out;
+                box-shadow: 0 0 5px rgba(255, 255, 255, 0.5); /* Softer glow */
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>

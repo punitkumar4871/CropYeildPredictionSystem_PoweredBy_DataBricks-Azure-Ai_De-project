@@ -7,30 +7,70 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            background: url("{{ url_for('static', filename='cropimg3.jpg') }}") no-repeat center center;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
         }
         .container {
             max-width: 600px;
-            margin: 0 auto;
-            background: white;
+            width: 100%;
+            background: #e5ebaf;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h2 {
             text-align: center;
         }
+
+        h2 {
+            text-align: center;
+            transition: color 0.3s, transform 0.3s;
+        }
+        h2:hover {
+            color: #ff6600;
+            transform: scale(1.15);
+        }
+
         label {
             font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            transition: color 0.3s, transform 0.3s;
         }
+        label:hover {
+            color: #0056b3;
+            transform: scale(1.2);
+        }
+
         input, select {
             width: 100%;
             padding: 8px;
             margin: 5px 0 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            transition: box-shadow 0.3s;
         }
+        input:hover, select:hover {
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .result-container h3, .result-container p {
+            transition: color 0.3s;
+        }
+
         button {
             width: 48%;
             padding: 10px;
@@ -39,20 +79,41 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            transition: 0.3s ease-in-out;
+            position: relative;
+            overflow: hidden;
         }
+
         .predict-btn {
-            background-color: #28a745;
+            background: linear-gradient(135deg, #28a745, #1e7e34);
             color: white;
+            font-weight: bold;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.8);
         }
+
         .report-btn {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
+            font-weight: bold;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.8);
         }
-        .result-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: #e9ecef;
-            border-radius: 4px;
+
+        .predict-btn:hover, .report-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.9);
+        }
+
+        /* Cursor Effect */
+        .cursor-effect {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.2s ease-out, transform 0.1s ease-out;
+            transform: scale(1);
         }
     </style>
 </head>
@@ -63,23 +124,64 @@
 
     <form action="/predictdata" method="post">
         <label for="State_Name">State:</label>
-        <input type="text" id="State_Name" name="State_Name" required>
+        <select id="State_Name" name="State_Name" required>
+            <option value="" disabled selected>Select State</option>
+            <option value="ANI">ANI</option>
+            <option value="AP">AP</option>
+            <option value="ARP">ARP</option>
+            <option value="ASM">ASM</option>
+            <option value="BHR">BHR</option>
+            <option value="CHD">CHD</option>
+            <option value="CHG">CHG</option>
+            <option value="GOA">GOA</option>
+            <option value="GUJ">GUJ</option>
+            <option value="HAR">HAR</option>
+            <option value="HP">HP</option>
+            <option value="J&K">J&K</option>
+            <option value="JHK">JHK</option>
+            <option value="KAR">KAR</option>
+            <option value="KER">KER</option>
+            <option value="MAH">MAH</option>
+            <option value="MAN">MAN</option>
+            <option value="MEG">MEG</option>
+            <option value="MIZ">MIZ</option>
+            <option value="MP">MP</option>
+            <option value="NAG">NAG</option>
+            <option value="ODI">ODI</option>
+            <option value="PUN">PUN</option>
+            <option value="RAJ">RAJ</option>
+            <option value="SIK">SIK</option>
+            <option value="TEL">TEL</option>
+            <option value="TN">TN</option>
+            <option value="TRI">TRI</option>
+            <option value="UK">UK</option>
+            <option value="UP">UP</option>
+            <option value="WB">WB</option>
+        </select>
 
         <label for="District_Name">District:</label>
         <input type="text" id="District_Name" name="District_Name" required>
 
         <label for="Season">Season:</label>
         <select id="Season" name="Season">
+            <option value="Whole Year">Whole Year</option>
             <option value="Kharif">Kharif</option>
             <option value="Rabi">Rabi</option>
+            <option value="Autumn">Autumn</option>
             <option value="Summer">Summer</option>
+            <option value="Winter">Winter</option>
         </select>
 
         <label for="Crop">Crop:</label>
         <input type="text" id="Crop" name="Crop" required>
 
         <label for="Crop_Year">Crop Year:</label>
-        <input type="number" id="Crop_Year" name="Crop_Year" required>
+        <select id="Crop_Year" name="Crop_Year" required>
+            <option value="" disabled selected>Select Year</option>
+            {% for year in range(1999, 2024) %}
+                <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+        </select>
 
         <label for="Area">Land Area (hectares):</label>
         <input type="number" id="Area" name="Area" step="0.1" required>
@@ -106,6 +208,21 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+    document.addEventListener('mousemove', function(e) {
+        let effect = document.createElement('div');
+        effect.className = 'cursor-effect';
+        document.body.appendChild(effect);
+        effect.style.left = e.pageX + 'px';
+        effect.style.top = e.pageY + 'px';
+        setTimeout(() => {
+            effect.style.opacity = '0';
+            effect.style.transform = 'scale(2)';
+            setTimeout(() => effect.remove(), 200);
+        }, 30);
+    });
+</script>
 
 </body>
 </html>
