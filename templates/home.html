@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crop Yield Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .login {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="login">
+        <h1>Crop Yield Prediction System</h1>
+        
+        <form action="/predictdata" method="post">
+            <h2><legend>Crop Yield Prediction</legend></h2>
+
+            <label class="form-label">State Name</label>
+            <select class="form-control" name="State_Name" required>
+                <option class="placeholder" selected disabled value="">Select State</option>
+                <option value="ANI">Andaman and Nicobar Islands</option>
+                <option value="AP">Andhra Pradesh</option>
+            </select>
+
+            <label class="form-label">District Name</label>
+            <select class="form-control" name="District_Name" required>
+                <option class="placeholder" selected disabled value="">Select District</option>
+                <option value="NICOBARS">Nicobars</option>
+                <option value="ANANTAPUR">Anantapur</option>
+            </select>
+
+            <label class="form-label">Season</label>
+            <select class="form-control" name="Season" required>
+                <option class="placeholder" selected disabled value="">Select Season</option>
+                <option value="Kharif">Kharif</option>
+                <option value="Rabi">Rabi</option>
+            </select>
+
+            <label class="form-label">Crop</label>
+            <select class="form-control" name="Crop" required>
+                <option class="placeholder" selected disabled value="">Select Crop</option>
+                <option value="Rice">Rice</option>
+                <option value="Maize">Maize</option>
+            </select>
+
+            <label class="form-label">Crop Year</label>
+            <input class="form-control" type="number" name="Crop_Year" min="1990" max="2025" required>
+
+            <label class="form-label">Area (hectares)</label>
+            <input class="form-control" type="number" name="Area" min="0" step="0.01" required>
+
+            <label class="form-label">Annual Rainfall (mm)</label>
+            <input class="form-control" type="number" name="annual_rainfall" min="0" required>
+
+            <input class="btn btn-primary" type="submit" value="Predict Yield">
+        </form>
+        
+        {% if results is not none %}
+            {% if results.startswith("Error") %}
+                <h2 class="error">{{ results }}</h2>
+            {% else %}
+                <h2 class="success">
+                    ✅ The predicted yield is: <strong>{{ results }}</strong>
+                </h2>
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>

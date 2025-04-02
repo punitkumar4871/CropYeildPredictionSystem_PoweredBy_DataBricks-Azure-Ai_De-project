@@ -8,6 +8,7 @@ from sklearn.metrics import r2_score
 from src.exception import CustomException
 from src.logger import logging
 from src.utils import save_object, evaluate_models
+import numpy as np
 
 @dataclass
 class ModelTrainerConfig:
@@ -30,6 +31,7 @@ class ModelTrainer:
             # 🚀 Using only XGBoost with the exact parameters from your previous model
             models = {
                 "XGBRegressor": XGBRegressor(
+                    
                     random_state=42, 
                     tree_method='gpu_hist', 
                     n_estimators=300,        # Matches your standalone model
@@ -72,7 +74,20 @@ class ModelTrainer:
             )
 
             # 🚀 Predict and calculate R² score
-            predicted = best_model.predict(X_test)
+            predicted = best_model.predict(X_test)\
+            
+            if predicted.size == 1:
+                predicted = predicted.item()  # Convert single value numpy array to float
+            else:
+                predicted = predicted.tolist()  # Convert multiple values to a Python list
+
+# Convert to Python float if it's an array
+            if isinstance(predicted, np.ndarray) and predicted.shape == (1,):  
+                 predicted = predicted.item()  # Convert only if it's a single value array
+            elif isinstance(predicted, np.ndarray):  
+                 predicted = predicted.astype(float)  # Convert all values in the array
+            elif isinstance(predicted, np.float32):  
+                predicted = float(predicted)  # Convert a single numpy float32 to float
             r2_square = r2_score(y_test, predicted)
 
             return r2_square

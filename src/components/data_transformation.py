@@ -24,8 +24,8 @@ class DataTransformation:
         This function is responsible for data transformation
         """
         try:
-            numerical_columns = ['Crop_Year', 'Area', 'annual_rainfall', 'Soil pH']
-            categorical_columns = ['State_Name', 'District_Name', 'Season', 'Crop', 'Soil Type']
+            numerical_columns = ['Crop_Year', 'Area', 'annual_rainfall']
+            categorical_columns = ['State_Name', 'District_Name', 'Season', 'Crop']
 
             #  Numerical Pipeline
             num_pipeline = Pipeline(steps=[
@@ -67,13 +67,15 @@ class DataTransformation:
 
             target_column_name = "yeild"
             extra_column = "Production"  # Column to drop
-            numerical_columns = ['Crop_Year', 'Area', 'annual_rainfall', 'Soil pH']
+            extra_column1='Soil pH'
+            extra_column2 ='Soil Type'
+            numerical_columns = ['Crop_Year', 'Area', 'annual_rainfall']
 
             # Split features and target
-            input_feature_train_df = train_df.drop(columns=[target_column_name, extra_column], axis=1)
+            input_feature_train_df = train_df.drop(columns=[target_column_name, extra_column,extra_column1,extra_column2], axis=1)
             target_feature_train_df = train_df[target_column_name]
 
-            input_feature_test_df = test_df.drop(columns=[target_column_name, extra_column], axis=1)
+            input_feature_test_df = test_df.drop(columns=[target_column_name, extra_column,extra_column1,extra_column2], axis=1)
             target_feature_test_df = test_df[target_column_name]
 
             logging.info("Applying preprocessing object to training and testing data")
@@ -89,8 +91,8 @@ class DataTransformation:
                 input_feature_test_arr = input_feature_test_arr.toarray()
 
             #  Ensure target variable has correct shape
-            target_feature_train_df = target_feature_train_df.values.reshape(-1, 1)
-            target_feature_test_df = target_feature_test_df.values.reshape(-1, 1)
+            target_feature_train_df = target_feature_train_df.astype(float).values.reshape(-1, 1)
+            target_feature_test_df = target_feature_test_df.astype(float).values.reshape(-1, 1)
 
             
             # Concatenate features & target variable
