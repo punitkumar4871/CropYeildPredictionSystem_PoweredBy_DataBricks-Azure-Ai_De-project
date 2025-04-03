@@ -10,4 +10,6 @@ scipy
 dill
 streamlit
 google-generativeai
+flask-limiter
+flask-caching
 -e .

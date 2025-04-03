@@ -7,17 +7,19 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            background: url("{{ url_for('static', filename='cropimg3.jpg') }}") no-repeat center center fixed;
+            background-size: cover;
             margin: 0;
             padding: 20px;
         }
         .container {
             max-width: 900px;
             margin: 0 auto;
-            background: white;
+            background: #e5ebaf;
             padding: 25px;
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+
         }
         h2 {
             text-align: center;
