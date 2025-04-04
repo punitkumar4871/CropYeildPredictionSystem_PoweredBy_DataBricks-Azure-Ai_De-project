@@ -8,7 +8,7 @@ from datetime import datetime
 import textwrap
 
 # Configure Gemini AI API Key
-genai.configure(api_key="AIzaSyCzEHr9A5O7I-rZ8hAosbnAaKx0MUZ40k0")
+genai.configure(api_key="AIzaSyBPA8qtCAAttKztC_2s66u8dANYDOb_sKc")
 
 application = Flask(__name__)
 app = application
