@@ -19,14 +19,14 @@
             flex-direction: column;
             background: url("{{ url_for('static', filename='cropimg.jpg') }}") no-repeat center center;
             background-size: cover;
-            overflow: hidden; /* Prevents scrollbars due to effect */
+            overflow: hidden;
         }
         h1 {
             color: black;
             font-size: 36px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             position: relative;
-            top: -230px; /* Moves text higher */
+            top: -230px;
             transition: transform 0.3s ease-in-out;
         }
         h1:hover {
@@ -38,7 +38,7 @@
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
             margin-bottom: 20px;
             position: relative;
-            top: -210px; /* Moves text higher */
+            top: -210px;
             transition: transform 0.3s ease-in-out;
         }
         p:hover {
@@ -55,7 +55,7 @@
             font-weight: bold;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
             position: relative;
-            top: 100px; /* Moves button lower */
+            top: 100px;
             transition: all 0.3s ease-in-out;
         }
         a:hover {
@@ -64,22 +64,96 @@
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
             transform: scale(1.1);
         }
+        /* Sidebar Styles from Second Version */
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+            z-index: 1;
+        }
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #45a049;
+        }
+        .sidebar .closebtn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+        }
+        .openbtn {
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #287c2a;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 3;
+            transition: 0.3s;
+        }
+        .openbtn:hover {
+            background-color: #45a049;
+        }
+        .trail-effect {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease-out;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body>
+    <div id="mySidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+        <a href="/history">View History</a>
+    </div>
+    <button class="openbtn" onclick="openNav()">☰</button>
+
     <h1>Welcome to Crop Yield Prediction System</h1>
     <p>This application helps predict crop yields based on various agricultural parameters.</p>
-
-    <!-- Button Below the Text -->
     <a href="/predictdata">Go to Prediction Page</a>
 
     <script>
+        function openNav() {
+            document.getElementById("mySidebar").style.width = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidebar").style.width = "0";
+        }
+
         document.addEventListener("mousemove", function(e) {
             let trail = document.createElement("div");
             trail.className = "trail-effect";
             document.body.appendChild(trail);
 
-            let size = Math.random() * 4 + 4; // Smaller effect (4px to 8px)
+            let size = Math.random() * 4 + 4;
             trail.style.width = size + "px";
             trail.style.height = size + "px";
             trail.style.left = e.clientX + "px";
@@ -87,24 +161,9 @@
 
             setTimeout(() => {
                 trail.style.opacity = "0";
-                setTimeout(() => trail.remove(), 300); // Faster fade-out
+                setTimeout(() => trail.remove(), 300);
             }, 50);
         });
-
-        // Add CSS for effect using JavaScript
-        let style = document.createElement("style");
-        style.innerHTML = `
-            .trail-effect {
-                position: absolute;
-                background-color: rgba(255, 255, 255, 0.6); /* Less bright */
-                border-radius: 50%;
-                pointer-events: none;
-                transform: translate(-50%, -50%);
-                transition: opacity 0.3s ease-out;
-                box-shadow: 0 0 5px rgba(255, 255, 255, 0.5); /* Softer glow */
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

@@ -13,11 +13,15 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
 # Configure Gemini AI API Key
-genai.configure(api_key="AIzaSyBPA8qtCAAttKztC_2s66u8dANYDOb_sKc")
+genai.configure(api_key="AIzaSyBs1cD-UUAExyeNouBBbW3HIigEfF4m3Vg")
 
 application = Flask(__name__)
 app = application
-app.secret_key = 'abcd123456789'  # Needed for session
+app.secret_key = 'abcd123456789'  # Still needed for other session data (e.g., report generation)
+
+# Server-side history storage (resets on app restart)
+history_list = []  # Global list to store history, clears when app stops
+history_lock = Lock()  # Lock for thread-safe access
 
 # Thread-safe storage for report data
 report_data_cache = {}
@@ -25,6 +29,7 @@ cache_lock = Lock()
 
 @app.route('/')
 def index():
+    print(f"Current history on index: {history_list}")
     return render_template('index.html')
 
 @app.route('/predictdata', methods=['GET', 'POST'])
@@ -47,14 +52,24 @@ def predict_datapoint():
             predict_pipeline = PredictPipeline()
             results = predict_pipeline.predict(pred_df)
 
+            # Store dataframe and prediction in history_list
+            history_entry = {
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'dataframe': pred_df.to_dict(orient='records')[0],
+                'prediction': float(results[0])
+            }
+            with history_lock:
+                history_list.append(history_entry)
+            print(f"Added to history: {history_entry}")
+            print(f"Current history: {history_list}")
+
             return render_template('home.html', results=str(results[0]))
         except Exception as e:
+            print(f"Error in predict_datapoint: {str(e)}")
             return render_template('home.html', results=f"Error: {str(e)}")
 
 def generate_ai_content(state, district, season, crop, area, predicted_yield):
-    """Generate comprehensive farming recommendations using Gemini AI with fallbacks"""
     total_production = round(predicted_yield * area, 2)
-
     model = genai.GenerativeModel('gemini-1.5-pro-latest')
     prompts = {
         'soil': f"Provide detailed soil recommendations for {crop} in {district}, {state} during {season}. Limit response to 150 words.",
@@ -65,34 +80,28 @@ def generate_ai_content(state, district, season, crop, area, predicted_yield):
         'market': f"Analyze current market trends for {crop} in {state}. Limit response to 150 words.",
         'schemes': f"List government schemes for {crop} farmers in {district}, {state}. Limit response to 150 words."
     }
-
-    # Fallback responses for each section
     fallbacks = {
-        'soil': f"For {crop}, ensure soil is well-drained and rich in organic matter. Test soil pH and adjust with lime or sulfur as needed (ideal range: 6.0-7.0). Add compost or manure to improve fertility. Avoid waterlogging and consider crop-specific nutrient needs like nitrogen, phosphorus, and potassium.",
-        'pest': f"Common pests for {crop} may include aphids, beetles, and caterpillars, while diseases like fungal infections or blight can occur. Monitor crops regularly, use organic pesticides if possible, and remove affected plants to prevent spread. Consult local experts for region-specific threats.",
-        'irrigation': f"Irrigate {crop} based on {season} conditions—typically 1-2 inches of water weekly. Use drip or sprinkler systems for efficiency. Avoid overwatering to prevent root rot. Adjust frequency during dry spells or heavy rains, ensuring consistent soil moisture.",
-        'practices': f"For {crop}, rotate crops yearly to maintain soil health, use quality seeds, and plant at optimal spacing. Weed regularly, apply mulch to retain moisture, and time planting with {season} weather patterns. Monitor growth and adjust care as needed.",
-        'climate': f"In {district}, {season} weather may affect {crop} with temperature swings or rainfall changes. Protect young plants from extreme heat or cold, and adjust planting schedules if unpredictable patterns occur. Adequate shade or drainage can mitigate impacts.",
-        'market': f"Market trends for {crop} in {state} depend on supply and demand. Prices may rise with low regional production or fall during surpluses. Check local markets or co-ops for current rates and consider selling at peak demand times.",
-        'schemes': f"Farmers in {district}, {state} growing {crop} may access subsidies for seeds, fertilizers, or equipment. Look into national schemes like PM-KISAN or state-specific programs. Contact local agriculture offices for eligibility and application details."
+        'soil': f"For {crop}, ensure soil is well-drained and rich in organic matter.",
+        'pest': f"Common pests for {crop} may include aphids and beetles.",
+        'irrigation': f"Irrigate {crop} with 1-2 inches of water weekly.",
+        'practices': f"For {crop}, rotate crops yearly and use quality seeds.",
+        'climate': f"In {district}, {season} weather may affect {crop}.",
+        'market': f"Market trends for {crop} in {state} vary with supply.",
+        'schemes': f"Farmers in {district}, {state} may access subsidies."
     }
-
     responses = {}
     for key, prompt in prompts.items():
-        for attempt in range(3):  # Retry up to 3 times
+        for attempt in range(3):
             try:
-                time.sleep(2)  # Delay between requests
+                time.sleep(2)
                 response = model.generate_content(prompt)
                 responses[key] = response.text if response.text else fallbacks[key]
                 break
             except Exception as e:
                 error_msg = str(e).lower()
                 if "quota exceeded" in error_msg or "429" in error_msg or attempt == 2:
-                    # Use fallback content if quota exceeded or all retries fail
                     responses[key] = fallbacks[key]
                     break
-                # Otherwise, retry on other errors
-
     return {
         "state": state,
         "district": district,
@@ -112,7 +121,6 @@ def generate_ai_content(state, district, season, crop, area, predicted_yield):
     }
 
 def generate_report_in_background(form_data, session_id):
-    @copy_current_request_context
     def generate_and_store():
         try:
             state = form_data.get('State_Name')
@@ -123,7 +131,6 @@ def generate_report_in_background(form_data, session_id):
             area = float(form_data.get('Area'))
             annual_rainfall = float(form_data.get('annual_rainfall'))
 
-            # Get predicted yield
             data = CustomData(
                 State_Name=state,
                 District_Name=district,
@@ -136,35 +143,35 @@ def generate_report_in_background(form_data, session_id):
             pred_df = data.get_data_as_data_frame()
             predict_pipeline = PredictPipeline()
             predicted_yield = predict_pipeline.predict(pred_df)[0]
-            
-            # Generate AI content
+
+            # Store dataframe and prediction in history_list (thread-safe)
+            history_entry = {
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'dataframe': pred_df.to_dict(orient='records')[0],
+                'prediction': float(predicted_yield)
+            }
+            with history_lock:
+                history_list.append(history_entry)
+            print(f"Added to history from report: {history_entry}")
+            print(f"Current history from report: {history_list}")
+
             report_data = generate_ai_content(state, district, season, crop, area, predicted_yield)
-            
-            # Store in cache
             with cache_lock:
                 report_data_cache[session_id] = report_data
-
         except Exception as e:
+            print(f"Error in generate_report_in_background: {str(e)}")
             with cache_lock:
                 report_data_cache[session_id] = {"error": str(e)}
     
-    # Start the generation
     thread = threading.Thread(target=generate_and_store)
     thread.start()
 
 @app.route('/generate_report', methods=['POST'])
 def show_loader():
-    # Create unique session ID
     session_id = str(time.time())
     session['session_id'] = session_id
-    
-    # Store form data in session
     session['form_data'] = request.form.to_dict()
-    
-    # Start background generation
     generate_report_in_background(request.form, session_id)
-    
-    # Show loader page
     return render_template('loader.html', session_id=session_id)
 
 @app.route('/check_report')
@@ -177,21 +184,16 @@ def check_report():
 @app.route('/report')
 def show_report():
     session_id = session.get('session_id', '')
-    
-    # Check if report is ready (with timeout)
     start_time = time.time()
-    while time.time() - start_time < 60:  # 60 second timeout
+    while time.time() - start_time < 60:
         with cache_lock:
             if session_id in report_data_cache:
                 report_data = report_data_cache.get(session_id, {})
                 if 'error' in report_data:
                     return render_template('report.html', error=report_data['error'])
                 return render_template('report.html', session_id=session_id, **report_data)
-        time.sleep(0.5)  # Check every 0.5 seconds
-    
-    # If timeout reached
-    return render_template('report.html', 
-                         error="Report generation is taking longer than expected. Please try again later.")
+        time.sleep(0.5)
+    return render_template('report.html', error="Report generation timeout.")
 
 @app.route('/api/generate_report', methods=['POST'])
 def api_generate_report():
@@ -220,7 +222,6 @@ def api_generate_report():
         
         report_data = generate_ai_content(state, district, season, crop, area, predicted_yield)
         return jsonify(report_data)
-
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -230,15 +231,13 @@ def download_report(session_id):
         with cache_lock:
             report_data = report_data_cache.get(session_id, None)
             if not report_data or 'error' in report_data:
-                return "Report not found or generation failed", 404
+                return "Report not found", 404
 
-        # Create PDF buffer
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter)
         styles = getSampleStyleSheet()
         story = []
 
-        # Add report content to PDF
         story.append(Paragraph("Comprehensive Farming Report", styles['Heading1']))
         story.append(Spacer(1, 12))
         
@@ -272,11 +271,9 @@ def download_report(session_id):
             story.append(Paragraph(report_data[key], styles['Normal']))
             story.append(Spacer(1, 12))
 
-        # Build PDF
         doc.build(story)
         buffer.seek(0)
         
-        # Send file as download
         return app.response_class(
             buffer.getvalue(),
             mimetype='application/pdf',
@@ -284,6 +281,13 @@ def download_report(session_id):
         )
     except Exception as e:
         return str(e), 500
+
+@app.route('/history')
+def show_history():
+    with history_lock:
+        history = history_list.copy()  # Thread-safe copy
+    print(f"Rendering history page with: {history}")
+    return render_template('history.html', history=history)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
