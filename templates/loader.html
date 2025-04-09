@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generating Report...</title>
+    <style>
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+        }
+        .loader-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <img src="{{ url_for('static', filename='ggif.gif') }}" alt="Loading..." width="200">
+        <div class="loader-text">Generating your comprehensive report...</div>
+        <div class="loader-text" id="countdown">Estimated time remaining: 30 seconds</div>
+    </div>
+
+    <script>
+        const sessionId = "{{ session_id }}";
+        let seconds = 30;
+        const countdownElement = document.getElementById('countdown');
+        
+        // Update countdown every second
+        const countdown = setInterval(function() {
+            seconds--;
+            countdownElement.textContent = `Estimated time remaining: ${seconds} seconds`;
+            
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                checkReportReady();
+            }
+        }, 1000);
+
+        // Check if report is ready
+        function checkReportReady() {
+            fetch(`/check_report?session_id=${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ready) {
+                        window.location.href = "/report";
+                    } else {
+                        // Check again after 1 second
+                        setTimeout(checkReportReady, 1000);
+                    }
+                });
+        }
+    </script>
+</body>
+</html>

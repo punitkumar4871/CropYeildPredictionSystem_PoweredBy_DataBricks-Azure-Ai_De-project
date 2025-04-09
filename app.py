@@ -1,17 +1,27 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, session, redirect, url_for, copy_current_request_context
 import numpy as np
 import pandas as pd
 import google.generativeai as genai
 from src.pipeline.predict_pipeline import CustomData, PredictPipeline
 import time
 from datetime import datetime
-import textwrap
+import threading
+from threading import Lock
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 # Configure Gemini AI API Key
 genai.configure(api_key="AIzaSyBPA8qtCAAttKztC_2s66u8dANYDOb_sKc")
 
 application = Flask(__name__)
 app = application
+app.secret_key = 'abcd123456789'  # Needed for session
+
+# Thread-safe storage for report data
+report_data_cache = {}
+cache_lock = Lock()
 
 @app.route('/')
 def index():
@@ -42,12 +52,8 @@ def predict_datapoint():
             return render_template('home.html', results=f"Error: {str(e)}")
 
 def generate_ai_content(state, district, season, crop, area, predicted_yield):
-    """Generate comprehensive farming recommendations using Gemini AI with delays between requests."""
+    """Generate comprehensive farming recommendations using Gemini AI"""
     total_production = round(predicted_yield * area, 2)
-
-    print(f"\nYield Information:")
-    print(f"Predicted Yield: {predicted_yield} tons/hectare")
-    print(f"Total Production: {area} hectares × {predicted_yield} = {total_production} tons\n")
 
     model = genai.GenerativeModel('gemini-1.5-pro-latest')
     prompts = {
@@ -62,20 +68,20 @@ def generate_ai_content(state, district, season, crop, area, predicted_yield):
 
     responses = {}
     for key, prompt in prompts.items():
-        for attempt in range(3):  # Retry up to 3 times if quota is exceeded
+        for attempt in range(3):  # Retry up to 3 times
             try:
-                time.sleep(2)  # ⏳ Delay of 2 seconds between each AI request
+                time.sleep(2)  # Delay between requests
                 response = model.generate_content(prompt)
                 responses[key] = response.text if response.text else "No data available."
-                break  # If successful, break the retry loop
+                break
             except Exception as e:
                 error_msg = str(e).lower()
                 if "quota exceeded" in error_msg or "429" in error_msg:
-                    responses[key] = "⚠️ AI-generated content is currently unavailable due to high demand. Please try again later."
-                    break  # Stop retrying and set a formal error message
+                    responses[key] = "⚠️ AI-generated content is currently unavailable due to high demand."
+                    break
                 else:
                     responses[key] = f"Content generation failed: {str(e)}"
-                    break  # Stop retrying for non-quota errors
+                    break
 
     return {
         "state": state,
@@ -86,48 +92,96 @@ def generate_ai_content(state, district, season, crop, area, predicted_yield):
         "area": area,
         "predicted_yield": predicted_yield,
         "total_yield": total_production,
-        "soil_recommendations": responses.get('soil', '⚠️ AI-generated content is unavailable at the moment.'),
-        "pest_management": responses.get('pest', '⚠️ AI-generated content is unavailable at the moment.'),
-        "irrigation_strategies": responses.get('irrigation', '⚠️ AI-generated content is unavailable at the moment.'),
-        "best_farming_practices": responses.get('practices', '⚠️ AI-generated content is unavailable at the moment.'),
-        "climate_impact": responses.get('climate', '⚠️ AI-generated content is unavailable at the moment.'),
-        "market_trends": responses.get('market', '⚠️ AI-generated content is unavailable at the moment.'),
-        "government_schemes": responses.get('schemes', '⚠️ AI-generated content is unavailable at the moment.')
+        "soil_recommendations": responses.get('soil'),
+        "pest_management": responses.get('pest'),
+        "irrigation_strategies": responses.get('irrigation'),
+        "best_farming_practices": responses.get('practices'),
+        "climate_impact": responses.get('climate'),
+        "market_trends": responses.get('market'),
+        "government_schemes": responses.get('schemes')
     }
 
+def generate_report_in_background(form_data, session_id):
+    @copy_current_request_context
+    def generate_and_store():
+        try:
+            state = form_data.get('State_Name')
+            district = form_data.get('District_Name')
+            season = form_data.get('Season')
+            crop = form_data.get('Crop')
+            crop_year = int(form_data.get('Crop_Year'))
+            area = float(form_data.get('Area'))
+            annual_rainfall = float(form_data.get('annual_rainfall'))
+
+            # Get predicted yield
+            data = CustomData(
+                State_Name=state,
+                District_Name=district,
+                Season=season,
+                Crop=crop,
+                Crop_Year=crop_year,
+                Area=area,
+                annual_rainfall=annual_rainfall
+            )
+            pred_df = data.get_data_as_data_frame()
+            predict_pipeline = PredictPipeline()
+            predicted_yield = predict_pipeline.predict(pred_df)[0]
+            
+            # Generate AI content
+            report_data = generate_ai_content(state, district, season, crop, area, predicted_yield)
+            
+            # Store in cache
+            with cache_lock:
+                report_data_cache[session_id] = report_data
+
+        except Exception as e:
+            with cache_lock:
+                report_data_cache[session_id] = {"error": str(e)}
+    
+    # Start the generation
+    thread = threading.Thread(target=generate_and_store)
+    thread.start()
+
 @app.route('/generate_report', methods=['POST'])
-def generate_report():
-    try:
-        # Get form data
-        state = request.form.get('State_Name')
-        district = request.form.get('District_Name')
-        season = request.form.get('Season')
-        crop = request.form.get('Crop')
-        crop_year = int(request.form.get('Crop_Year'))
-        area = float(request.form.get('Area'))
-        annual_rainfall = float(request.form.get('annual_rainfall'))
+def show_loader():
+    # Create unique session ID
+    session_id = str(time.time())
+    session['session_id'] = session_id
+    
+    # Store form data in session
+    session['form_data'] = request.form.to_dict()
+    
+    # Start background generation
+    generate_report_in_background(request.form, session_id)
+    
+    # Show loader page
+    return render_template('loader.html', session_id=session_id)
 
-        # Get predicted yield from model
-        data = CustomData(
-            State_Name=state,
-            District_Name=district,
-            Season=season,
-            Crop=crop,
-            Crop_Year=crop_year,
-            Area=area,
-            annual_rainfall=annual_rainfall
-        )
-        pred_df = data.get_data_as_data_frame()
-        predict_pipeline = PredictPipeline()
-        predicted_yield = predict_pipeline.predict(pred_df)[0]
-        
-        # Generate AI content with actual yield
-        report_data = generate_ai_content(state, district, season, crop, area, predicted_yield)
-        
-        return render_template('report.html', **report_data)
+@app.route('/check_report')
+def check_report():
+    session_id = request.args.get('session_id', '')
+    with cache_lock:
+        ready = session_id in report_data_cache
+    return jsonify({"ready": ready})
 
-    except Exception as e:
-        return render_template('report.html', error=str(e))
+@app.route('/report')
+def show_report():
+    session_id = session.get('session_id', '')
+    
+    # Check if report is ready (with timeout)
+    start_time = time.time()
+    while time.time() - start_time < 60:  # 60 second timeout
+        with cache_lock:
+            if session_id in report_data_cache:
+                report_data = report_data_cache.get(session_id, {})
+                if 'error' in report_data:
+                    return render_template('report.html', error=report_data['error'])
+                return render_template('report.html', session_id=session_id, **report_data)
+        time.sleep(0.5)  # Check every 0.5 seconds
+    
+    # If timeout reached
+    return render_template('report.html', 
+                         error="Report generation is taking longer than expected. Please try again later.")
 
 @app.route('/api/generate_report', methods=['POST'])
 def api_generate_report():
@@ -141,7 +195,6 @@ def api_generate_report():
         area = float(data.get('Area'))
         annual_rainfall = float(data.get('annual_rainfall'))
 
-        # Get predicted yield from model
         data = CustomData(
             State_Name=state,
             District_Name=district,
@@ -155,12 +208,72 @@ def api_generate_report():
         predict_pipeline = PredictPipeline()
         predicted_yield = predict_pipeline.predict(pred_df)[0]
         
-        # Generate AI content with actual yield
         report_data = generate_ai_content(state, district, season, crop, area, predicted_yield)
         return jsonify(report_data)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route('/download_report/<session_id>')
+def download_report(session_id):
+    try:
+        with cache_lock:
+            report_data = report_data_cache.get(session_id, None)
+            if not report_data or 'error' in report_data:
+                return "Report not found or generation failed", 404
+
+        # Create PDF buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Add report content to PDF
+        story.append(Paragraph("Comprehensive Farming Report", styles['Heading1']))
+        story.append(Spacer(1, 12))
+        
+        fields = [
+            f"State: {report_data['state']}",
+            f"District: {report_data['district']}",
+            f"Season: {report_data['season']}",
+            f"Crop: {report_data['crop']}",
+            f"Crop Year: {report_data['crop_year']}",
+            f"Land Area: {report_data['area']} hectares",
+            f"Predicted Yield per hectare: {report_data['predicted_yield']} tons",
+            f"Total Estimated Yield: {report_data['total_yield']} tons"
+        ]
+        
+        for field in fields:
+            story.append(Paragraph(field, styles['Normal']))
+            story.append(Spacer(1, 6))
+
+        sections = [
+            ("Soil & Fertilizer Recommendations", "soil_recommendations"),
+            ("Pest & Disease Management", "pest_management"),
+            ("Water & Irrigation Strategies", "irrigation_strategies"),
+            ("Best Farming Practices", "best_farming_practices"),
+            ("Climate Impact on Farming", "climate_impact"),
+            ("Market Trends & Pricing", "market_trends"),
+            ("Government Schemes & Subsidies", "government_schemes")
+        ]
+        
+        for title, key in sections:
+            story.append(Paragraph(title, styles['Heading2']))
+            story.append(Paragraph(report_data[key], styles['Normal']))
+            story.append(Spacer(1, 12))
+
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        # Send file as download
+        return app.response_class(
+            buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={'Content-Disposition': f'attachment;filename={report_data["crop"]}_report_{session_id}.pdf'}
+        )
+    except Exception as e:
+        return str(e), 500
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True) 
+    app.run(host="0.0.0.0", debug=True)

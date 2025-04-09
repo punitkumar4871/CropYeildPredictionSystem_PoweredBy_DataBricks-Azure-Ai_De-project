@@ -12,4 +12,9 @@ streamlit
 google-generativeai
 flask-limiter
 flask-caching
+pdfkit
+gunicorn
+weasyprint
+fpdf2
+reportlab
 -e .
