@@ -52,7 +52,7 @@ def predict_datapoint():
             return render_template('home.html', results=f"Error: {str(e)}")
 
 def generate_ai_content(state, district, season, crop, area, predicted_yield):
-    """Generate comprehensive farming recommendations using Gemini AI"""
+    """Generate comprehensive farming recommendations using Gemini AI with fallbacks"""
     total_production = round(predicted_yield * area, 2)
 
     model = genai.GenerativeModel('gemini-1.5-pro-latest')
@@ -66,22 +66,32 @@ def generate_ai_content(state, district, season, crop, area, predicted_yield):
         'schemes': f"List government schemes for {crop} farmers in {district}, {state}. Limit response to 150 words."
     }
 
+    # Fallback responses for each section
+    fallbacks = {
+        'soil': f"For {crop}, ensure soil is well-drained and rich in organic matter. Test soil pH and adjust with lime or sulfur as needed (ideal range: 6.0-7.0). Add compost or manure to improve fertility. Avoid waterlogging and consider crop-specific nutrient needs like nitrogen, phosphorus, and potassium.",
+        'pest': f"Common pests for {crop} may include aphids, beetles, and caterpillars, while diseases like fungal infections or blight can occur. Monitor crops regularly, use organic pesticides if possible, and remove affected plants to prevent spread. Consult local experts for region-specific threats.",
+        'irrigation': f"Irrigate {crop} based on {season} conditions—typically 1-2 inches of water weekly. Use drip or sprinkler systems for efficiency. Avoid overwatering to prevent root rot. Adjust frequency during dry spells or heavy rains, ensuring consistent soil moisture.",
+        'practices': f"For {crop}, rotate crops yearly to maintain soil health, use quality seeds, and plant at optimal spacing. Weed regularly, apply mulch to retain moisture, and time planting with {season} weather patterns. Monitor growth and adjust care as needed.",
+        'climate': f"In {district}, {season} weather may affect {crop} with temperature swings or rainfall changes. Protect young plants from extreme heat or cold, and adjust planting schedules if unpredictable patterns occur. Adequate shade or drainage can mitigate impacts.",
+        'market': f"Market trends for {crop} in {state} depend on supply and demand. Prices may rise with low regional production or fall during surpluses. Check local markets or co-ops for current rates and consider selling at peak demand times.",
+        'schemes': f"Farmers in {district}, {state} growing {crop} may access subsidies for seeds, fertilizers, or equipment. Look into national schemes like PM-KISAN or state-specific programs. Contact local agriculture offices for eligibility and application details."
+    }
+
     responses = {}
     for key, prompt in prompts.items():
         for attempt in range(3):  # Retry up to 3 times
             try:
                 time.sleep(2)  # Delay between requests
                 response = model.generate_content(prompt)
-                responses[key] = response.text if response.text else "No data available."
+                responses[key] = response.text if response.text else fallbacks[key]
                 break
             except Exception as e:
                 error_msg = str(e).lower()
-                if "quota exceeded" in error_msg or "429" in error_msg:
-                    responses[key] = "⚠️ AI-generated content is currently unavailable due to high demand."
+                if "quota exceeded" in error_msg or "429" in error_msg or attempt == 2:
+                    # Use fallback content if quota exceeded or all retries fail
+                    responses[key] = fallbacks[key]
                     break
-                else:
-                    responses[key] = f"Content generation failed: {str(e)}"
-                    break
+                # Otherwise, retry on other errors
 
     return {
         "state": state,
