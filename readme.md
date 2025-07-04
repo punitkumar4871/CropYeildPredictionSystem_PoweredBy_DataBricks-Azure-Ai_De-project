@@ -53,7 +53,7 @@ This End-to-End Crop Yield Prediction System is a scalable and automated solutio
 
 ## 🖼️ Project Architecture
 
-![Crop Yield MLOps Architecture](https://github.com/user-attachments/assets/e118dcdc-bc3f-4dff-b3df-4c13ede90b25)
+![Crop Yield MLOps Architecture](https://github.com/user-attachments/assets/f91b18b1-3a18-4f3b-9fe7-5c56391714fb)
 
 ---
 
