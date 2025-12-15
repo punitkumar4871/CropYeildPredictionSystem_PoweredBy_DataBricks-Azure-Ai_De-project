@@ -17,4 +17,3 @@ gunicorn
 weasyprint
 fpdf2
 reportlab
--e .
