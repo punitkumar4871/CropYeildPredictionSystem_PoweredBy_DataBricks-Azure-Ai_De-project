@@ -1,7 +1,7 @@
 numpy 
 pandas 
 seaborn
-scikit-learn
+scikit-learn==1.6.1
 xgboost
 catboost
 joblib
@@ -17,4 +17,3 @@ gunicorn
 weasyprint
 fpdf2
 reportlab
--e .
