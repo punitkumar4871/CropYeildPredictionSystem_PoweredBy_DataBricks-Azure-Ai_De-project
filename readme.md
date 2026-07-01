@@ -1,4 +1,4 @@
-# 🌾 Crop Yield Prediction System — End-to-End MLOps Project
+# 🌾 Crop Yield Prediction System — End-to-End MLOps Project.
 
 This is a full-scale MLOps deployment project that predicts agricultural crop yields using a cloud-based pipeline powered by **Databricks**, **Apache Spark**, and **Machine Learning**.
 
